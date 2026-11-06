@@ -1,8 +1,10 @@
 import sys
 import pygame
+import random
 
-import sys
-import pygame
+from historia import cenas, cenario_por_cena
+from dados_jogo import descricoes_pistas, personagens
+from dataclasses import dataclass, field
 
 # ==========================================
 # CONFIGURAÇÕES
@@ -19,6 +21,9 @@ pygame.display.set_caption("The Uncanny Valley")
 
 relogio = pygame.time.Clock()
 
+botao_pistas = pygame.Rect(800, 25, 170, 50)
+botao_voltar = pygame.Rect(780, 520, 170, 50)
+
 # Cores
 PRETO = (18, 18, 24)
 BRANCO = (245, 245, 245)
@@ -30,6 +35,13 @@ ROXO_CLARO = (170, 135, 195)
 fonte_titulo = pygame.font.SysFont("arial", 42, bold=True)
 fonte_texto = pygame.font.SysFont("arial", 25)
 fonte_botao = pygame.font.SysFont("arial", 24)
+
+# Cores provisórias para os cenários
+cores_cenarios = {
+    "casa": (95, 85, 100),
+    "jardim": (55, 85, 65),
+    "escuro": (18, 18, 24)
+}
 
 
 # ==========================================
@@ -104,60 +116,12 @@ def desenhar_caixa_dialogo(nome, texto):
         865
     )
 
-    dica = fonte_texto.render("Clique ou pressione espaço para continuar", True, BRANCO)
-    tela.blit(dica, (550, 530))
-
-
-# ==========================================
-# HISTÓRIA
-# ==========================================
-
-# Cada cena tem uma lista de falas.
-# Uma fala possui: (nome do personagem, texto).
-# Use nome vazio para a narração.
-
-cenas = {
-    "inicio": [
-        ("", "Após a morte de sua mãe, Cecília e seu pai se mudam para uma cidade próxima à floresta."),
-        ("", "A casa é nova. A escola é nova. Mas a saudade continua acompanhando Cecília."),
-        ("Cecília", "Pai... você acha que a mamãe consegue nos encontrar aqui?"),
-        ("Pai", "Acho que ela sempre vai estar com a gente, de alguma forma."),
-        ("", "Cecília aperta Mr. Fluffy contra o peito."),
-        ("Cecília", "Ainda não sei se gosto desta casa."),
-        ("Pai", "Vamos descobrir juntos, está bem?")
-    ],
-
-    "casa": [
-        ("", "Cecília caminha pelo corredor e observa as caixas ainda fechadas."),
-        ("", "Sobre uma mesa, ela encontra um frasco de remédio e uma bula."),
-        ("", "A bula menciona alucinações entre os possíveis efeitos adversos."),
-        ("Cecília", "O que isso quer dizer?")
-    ],
-
-    "janela": [
-        ("", "Cecília observa a floresta pela janela."),
-        ("", "Por um instante, algo parece se mover entre as árvores."),
-        ("Cecília", "Tem alguém ali?"),
-        ("", "Quando pisca, o movimento desaparece.")
-    ],
-
-    "circe": [
-        ("", "Mais tarde, Cecília brinca perto da casa quando escuta uma voz."),
-        ("Circe", "Você está procurando alguma coisa?"),
-        ("", "Entre as árvores, uma figura observa a menina."),
-        ("Cecília", "Quem é você?"),
-        ("Circe", "Pode me chamar de Circe."),
-        ("Cecília", "Você mora na floresta?"),
-        ("Circe", "De certa forma."),
-        ("", "Circe sorri. Há algo estranho em seu sorriso, mas sua voz é gentil.")
-    ],
-
-    "fim": [
-        ("", "Fim da introdução."),
-        ("", "A história continuará nos próximos episódios.")
-    ]
-}
-
+    dica = fonte_botao.render(
+        "Clique ou ESPAÇO: continuar  |  I: pistas",
+        True,
+        BRANCO
+    )
+    tela.blit(dica, (480, 530))
 
 # ==========================================
 # ESTADO DO JOGO
@@ -171,13 +135,23 @@ indice_fala = 0
 pistas_psicologicas = 0
 pistas_sobrenaturais = 0
 
+# Guarda os nomes das pistas encontradas pelo jogador
+inventario = []
+# Guarda a tela em que o jogador estava antes de abrir o caderno
+estado_anterior = None
+
 
 def avancar_fala():
     """Avança o diálogo ou muda para a próxima parte da história."""
     global indice_fala, estado, cena_atual
 
     indice_fala += 1
-
+    
+    # Registra a bula quando a fala sobre ela aparece
+    if cena_atual == "casa" and indice_fala == 1:
+        if "Bula do remédio" not in inventario:
+            inventario.append("Bula do remédio")
+            
     if indice_fala >= len(cenas[cena_atual]):
 
         if cena_atual == "inicio":
@@ -215,44 +189,48 @@ while True:
         if evento.type == pygame.KEYDOWN and evento.key == pygame.K_ESCAPE:
             pygame.quit()
             sys.exit()
+            
+        if evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:
+            if estado == "historia" and botao_pistas.collidepoint(evento.pos):
+                estado_anterior = estado
+                estado = "inventario"
+                continue
+            elif estado == "inventario" and botao_voltar.collidepoint(evento.pos):
+                estado = estado_anterior
+                continue
+
+        if evento.type == pygame.KEYDOWN and evento.key == pygame.K_i:
+            if estado == "historia":
+                estado_anterior = estado
+                estado = "inventario"
+            elif estado == "inventario":
+                estado = estado_anterior
+            continue
 
         if estado == "menu":
-
             if evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:
-                botao_iniciar = pygame.Rect(350, 330, 300, 60)
-
-                if botao_iniciar.collidepoint(evento.pos):
+                if pygame.Rect(350, 330, 300, 60).collidepoint(evento.pos):
                     estado = "historia"
-
         elif estado == "historia":
-
             if evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:
                 avancar_fala()
-
             elif evento.type == pygame.KEYDOWN and evento.key in (pygame.K_SPACE, pygame.K_RETURN):
                 avancar_fala()
-
         elif estado == "escolha":
-
             if evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:
-
-                botao_casa = pygame.Rect(250, 230, 500, 60)
-                botao_janela = pygame.Rect(250, 320, 500, 60)
-
-                if botao_casa.collidepoint(evento.pos):
+                if pygame.Rect(250, 230, 500, 60).collidepoint(evento.pos):
                     cena_atual = "casa"
                     indice_fala = 0
                     pistas_psicologicas += 1
                     estado = "historia"
-
-                elif botao_janela.collidepoint(evento.pos):
+                elif pygame.Rect(250, 320, 500, 60).collidepoint(evento.pos):
                     cena_atual = "janela"
                     indice_fala = 0
                     pistas_sobrenaturais += 1
+                    if "Movimento entre as árvores" not in inventario:
+                        inventario.append("Movimento entre as árvores")
                     estado = "historia"
-
         elif estado == "encerrado":
-
             if evento.type == pygame.KEYDOWN and evento.key == pygame.K_RETURN:
                 pygame.quit()
                 sys.exit()
@@ -273,11 +251,16 @@ while True:
 
     elif estado == "historia":
 
-        # Fundo temporário para representar o cenário
-        tela.fill(CINZA)
+    # Descobre qual cenário corresponde à cena atual
+        nome_cenario = cenario_por_cena[cena_atual]
 
+    # Desenha a cor provisória do cenário
+        tela.fill(cores_cenarios[nome_cenario])
+
+    # Mostra a fala atual por cima do cenário
         nome, texto = cenas[cena_atual][indice_fala]
         desenhar_caixa_dialogo(nome, texto)
+        desenhar_botao("Pistas", botao_pistas, posicao_mouse)
 
     elif estado == "escolha":
 
@@ -289,6 +272,24 @@ while True:
 
         desenhar_botao("Explorar a casa", botao_casa, posicao_mouse)
         desenhar_botao("Olhar pela janela", botao_janela, posicao_mouse)
+
+    elif estado == "inventario":
+        tela.fill(PRETO)
+        titulo = fonte_titulo.render("Caderno de pistas", True, ROXO_CLARO)
+        tela.blit(titulo, (60, 50))
+        if not inventario:
+            mensagem = fonte_texto.render("Você ainda não encontrou nenhuma pista.", True, BRANCO)
+            tela.blit(mensagem, (60, 140))
+        else:
+            for indice, pista in enumerate(inventario):
+                posicao_y = 140 + indice * 110
+                texto_pista = fonte_botao.render(f"• {pista}", True, ROXO_CLARO)
+                tela.blit(texto_pista, (60, posicao_y))
+                descricao = descricoes_pistas.get(pista, "Descrição ainda não disponível.")
+                desenhar_texto(descricao, 80, posicao_y + 35, fonte_texto, BRANCO, 820)
+        instrucao = fonte_texto.render("Pressione I para voltar à história", True, BRANCO)
+        tela.blit(instrucao, (60, 520))
+        desenhar_botao("Voltar", botao_voltar, posicao_mouse)
 
     elif estado == "encerrado":
 
@@ -306,8 +307,10 @@ while True:
             True,
             ROXO_CLARO
         )
+        
 
         tela.blit(resumo, resumo.get_rect(center=(LARGURA // 2, 380)))
+        
 
     pygame.display.flip()
     relogio.tick(FPS)

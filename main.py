@@ -3,11 +3,6 @@
 Textos/deduções são uma base editável, não a formalização final da disciplina.
 Edite EPISODIOS para modificar a história e DESAFIOS para alterar as questões.
 """
-import pygame
-import random
-
-from historia import cenas
-from dataclasses import dataclass, field
 
 LOCAIS = ("Quarto de Cecília", "Sala de casa", "Cozinha", "Sala da escola", "Jardim", "Clareira")
 

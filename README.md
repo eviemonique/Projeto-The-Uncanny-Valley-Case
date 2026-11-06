@@ -74,6 +74,7 @@ A narrativa utiliza seis locais:
 - Jornais sobre pessoas desaparecidas.
 - Coroas e rastros de flores.
 - Retrato da mãe de Cecília.
+- Remedios para ansiedade de Cecilia
 
 Cada elemento deve contribuir para a ambientação, a investigação ou a interpretação das pistas.
 
