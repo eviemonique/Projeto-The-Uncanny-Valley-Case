@@ -1,0 +1,17 @@
+{
+    "estado": "historia",
+    "cena_atual": "circe",
+    "indice_fala": 1,
+    "inventario": [
+        "Bula do remédio"
+    ],
+    "locais_visitados": {
+        "1": []
+    },
+    "pontos": 5,
+    "acertos": 0,
+    "erros": 0,
+    "desafios_respondidos": {},
+    "pistas_psicologicas": 1,
+    "pistas_sobrenaturais": 0
+}
